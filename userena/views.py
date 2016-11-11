@@ -357,7 +357,7 @@ def disabled_account(request, username, template_name, extra_context=None):
 
     :param template_name:
         String defining the name of the template to use. Defaults to
-        ``userena/signup_complete.html``.
+        ``userena/disabled.html``.
 
     **Keyword arguments**
 
