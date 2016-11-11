@@ -1,6 +1,13 @@
 import re
+import sys
+if sys.version_info < (2, 7):
+    # unittest2 for backport compatibility
+    from unittest2 import skipIf
+else:
+    from unittest import skipIf
 
 from datetime import datetime, timedelta
+import django
 from django.contrib.auth import get_user_model
 from django.conf.urls import url
 from django.core.urlresolvers import reverse
@@ -309,6 +316,7 @@ class UserenaViewsTests(TestCase):
                              reverse('userena_disabled',
                                      kwargs={'username': user.username}))
 
+    @skipIf(django.VERSION < (1, 7, 0), "override `ROOT_URLCONF` not supported")
     @override_settings(ROOT_URLCONF=SigninInactiveURLs)
     def test_signin_view_inactive_redirect_specified(self):
         """ A ``POST`` from a inactive user with inactive url specified """
