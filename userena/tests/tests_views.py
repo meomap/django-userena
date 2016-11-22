@@ -314,6 +314,17 @@ class UserenaViewsTests(TestCase):
                                           'next': '/accounts/'})
         self.assertRedirects(response, '/accounts/')
 
+    def test_signin_view_with_unsafe_next(self):
+        """
+        A ``POST`` to signin view with unsafe "next" parameter which
+        redirects to a different host, this should raise status forbidden
+        """
+        response = self.client.post(reverse('userena_signin'),
+                                    data={'identification': 'john@example.com',
+                                          'password': 'blowfish',
+                                          'next': 'http://example.com'})
+        self.assertEqual(response.status_code, 403)
+
     def test_signin_view_with_invalid_next(self):
         """
         If the value of "next" is not a real URL, this should not raise

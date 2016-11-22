@@ -8,8 +8,9 @@ from django.views.generic import TemplateView
 from django.views.generic.list import ListView
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
+from django.utils.http import is_safe_url
 from django.utils.translation import ugettext as _
-from django.http import Http404, HttpResponseRedirect
+from django.http import Http404, HttpResponseRedirect, HttpResponseForbidden
 
 from userena.forms import (SignupForm, SignupFormOnlyEmail, AuthenticationForm,
                            ChangeEmailForm, EditProfileForm)
@@ -457,6 +458,8 @@ def signin(request, auth_form=AuthenticationForm,
                 redirect_to = redirect_signin_function(
                     request.GET.get(redirect_field_name,
                                     request.POST.get(redirect_field_name)), user)
+                if not is_safe_url(url=redirect_to, host=request.get_host()):
+                    return HttpResponseForbidden("Redirect to %r forbidden" % redirect_to)  # noqa
                 return HttpResponseRedirect(redirect_to)
             else:
                 return redirect(reverse('userena_disabled',
