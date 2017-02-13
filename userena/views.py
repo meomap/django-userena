@@ -357,7 +357,7 @@ def disabled_account(request, username, template_name, extra_context=None):
 
     :param template_name:
         String defining the name of the template to use. Defaults to
-        ``userena/signup_complete.html``.
+        ``userena/disabled.html``.
 
     **Keyword arguments**
 
@@ -390,7 +390,8 @@ def disabled_account(request, username, template_name, extra_context=None):
 def signin(request, auth_form=AuthenticationForm,
            template_name='userena/signin_form.html',
            redirect_field_name=REDIRECT_FIELD_NAME,
-           redirect_signin_function=signin_redirect, extra_context=None):
+           redirect_signin_function=signin_redirect,
+           inactive_url=None, extra_context=None):
     """
     Signin using email or username with password.
 
@@ -420,6 +421,10 @@ def signin(request, auth_form=AuthenticationForm,
         Function which handles the redirect. This functions gets the value of
         ``REDIRECT_FIELD_NAME`` and the :class:`User` who has logged in. It
         must return a string which specifies the URI to redirect to.
+
+    :param inactive_url:
+        Named URL which will be passed on to a django ``reverse`` function if
+        account is disabled. Defaults to the ``userena_disabled`` url.
 
     :param extra_context:
         A dictionary containing extra variables that should be passed to the
@@ -459,8 +464,10 @@ def signin(request, auth_form=AuthenticationForm,
                                     request.POST.get(redirect_field_name)), user)
                 return HttpResponseRedirect(redirect_to)
             else:
-                return redirect(reverse('userena_disabled',
-                                        kwargs={'username': user.username}))
+                if inactive_url: redirect_to = inactive_url
+                else: redirect_to = reverse('userena_disabled',
+                                            kwargs={'username': user.username})
+                return redirect(redirect_to)
 
     if not extra_context: extra_context = dict()
     extra_context.update({

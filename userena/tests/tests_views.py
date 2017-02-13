@@ -1,17 +1,40 @@
 import re
+import sys
+if sys.version_info < (2, 7):
+    # unittest2 for backport compatibility
+    from unittest2 import skipIf
+else:
+    from unittest import skipIf
 
 from datetime import datetime, timedelta
+import django
 from django.contrib.auth import get_user_model
+from django.conf.urls import url
 from django.core.urlresolvers import reverse
 from django.core import mail
 from django.contrib.auth.forms import PasswordChangeForm
+from django.views.generic import TemplateView
 from django.test import TestCase
+from django.test.utils import override_settings
 
 from userena import forms
+from userena import views as userena_views
 from userena import settings as userena_settings
 from userena.utils import get_user_profile
 
 User = get_user_model()
+
+
+class SigninInactiveURLs(object):
+    """ Override default signin urls to test inactive redirect """
+    urlpatterns = [
+        url(r'^signup/$',userena_views.signin,
+            {'inactive_url': '/disabled/'},
+            name='custom_signin'),
+        url(r'^disabled/$',
+            TemplateView.as_view(template_name='userena/disabled.html'),
+            name='custom_disabled')
+    ]
 
 
 class UserenaViewsTests(TestCase):
@@ -292,6 +315,20 @@ class UserenaViewsTests(TestCase):
         self.assertRedirects(response,
                              reverse('userena_disabled',
                                      kwargs={'username': user.username}))
+
+    @skipIf(django.VERSION < (1, 7, 0), "override `ROOT_URLCONF` not supported")
+    @override_settings(ROOT_URLCONF=SigninInactiveURLs)
+    def test_signin_view_inactive_redirect_specified(self):
+        """ A ``POST`` from a inactive user with inactive url specified """
+        user = User.objects.get(email='john@example.com')
+        user.is_active = False
+        user.save()
+
+        response = self.client.post(reverse('custom_signin'),
+                                    data={'identification': 'john@example.com',
+                                          'password': 'blowfish'})
+
+        self.assertRedirects(response, reverse('custom_disabled'))
 
     def test_signin_view_success(self):
         """
